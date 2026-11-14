@@ -12,14 +12,25 @@ PRICE_PER_GB_MONTH = {
 def check_unattached_disks(disks: list[dict]) -> list[Finding]:
     findings = []
     for d in disks:
-        price = PRICE_PER_GB_MONTH.get(d["sku"], 0.10)
+        # Re-check in code: never trust that the query already filtered.
+        if d.get("managedBy"):
+            continue                      # attached to a VM
+        if d.get("diskState") not in (None, "Unattached"):
+            continue                      # e.g. Reserved, ActiveSAS
+        size = d.get("sizeGb")
+        if size is None:
+            cost = 0.0
+            detail = f"Disk (size unknown, {d.get('sku')})"
+        else:
+            cost = round(size * PRICE_PER_GB_MONTH.get(d.get("sku"), 0.10), 2)
+            detail = f"Disk ({size} GB, {d.get('sku')})"
         findings.append(
             Finding(
                 rule="unattached_disk",
                 resource_name=d["name"],
                 resource_group=d["resourceGroup"],
-                issue=f"Disk ({d['sizeGb']} GB, {d['sku']}) is not attached to any VM",
-                est_monthly_cost_usd=round(d["sizeGb"] * price, 2),
+                issue=f"{detail} is not attached to any VM",
+                est_monthly_cost_usd=cost,
                 risk=risk_from_tags(d.get("tags")),
                 recommended_action="Snapshot if needed, then delete the disk",
             )

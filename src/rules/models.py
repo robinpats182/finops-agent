@@ -12,11 +12,24 @@ class Finding:
     recommended_action: str
 
 
+ENV_KEYS = {"env", "environment", "stage"}
+PROTECTED_VALUES = {"prod", "production", "prd", "live"}
+PROTECT_KEYS = {"do-not-delete", "donotdelete"}
+FALSE_VALUES = {"false", "no", "0"}
+
+
 def risk_from_tags(tags: dict | None) -> str:
-    """Protected env -> high, no tags (owner unknown) -> medium, else low."""
-    tags = tags or {}
-    if str(tags.get("env", "")).lower() in {"prod", "production"}:
-        return "high"
+    """Protected -> high, no tags (owner unknown) -> medium, else low.
+
+    Tag names and values are compared case-insensitively and trimmed,
+    because people write Env, ENV, Environment, Production, PRD, etc.
+    """
     if not tags:
         return "medium"
+    norm = {str(k).strip().lower(): str(v).strip().lower()
+            for k, v in tags.items()}
+    if any(norm.get(k) in PROTECTED_VALUES for k in ENV_KEYS):
+        return "high"
+    if any(k in norm and norm[k] not in FALSE_VALUES for k in PROTECT_KEYS):
+        return "high"
     return "low"

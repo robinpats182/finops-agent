@@ -8,4 +8,4 @@ for k in ("AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT", "AZURE_OPENAI_API_
 endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
 deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT")
 
-print(AzureLLM().complete("You are concise.", "Say hello in five words."))
+print(AzureLLM().complete("You are concise.", "Say this is a finops project"))

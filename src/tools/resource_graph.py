@@ -2,20 +2,38 @@ import os
 from dotenv import load_dotenv
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.resourcegraph import ResourceGraphClient
-from azure.mgmt.resourcegraph.models import QueryRequest
+from azure.mgmt.resourcegraph.models import QueryRequest, QueryRequestOptions
 
 load_dotenv()
 
-SUBSCRIPTION_ID = os.environ["AZURE_SUBSCRIPTION_ID"]
+PAGE_SIZE = 1000   # Resource Graph maximum per call (the default is only 100)
+MAX_PAGES = 100    # safety stop so a bug can never loop forever
+
+
+def _subscription_id() -> str:
+    return os.environ["AZURE_SUBSCRIPTION_ID"]
+
+
+def _make_client() -> ResourceGraphClient:
+    return ResourceGraphClient(DefaultAzureCredential())
 
 
 def run_query(query: str) -> list[dict]:
-    """Run a Resource Graph (KQL) query and return rows as dicts."""
-    client = ResourceGraphClient(DefaultAzureCredential())
-    request = QueryRequest(subscriptions=[SUBSCRIPTION_ID], query=query)
-    response = client.resources(request)
-    return response.data
-
+    """Run a Resource Graph (KQL) query and return ALL rows, page by page."""
+    client = _make_client()
+    rows: list[dict] = []
+    skip_token = None
+    for _ in range(MAX_PAGES):
+        options = QueryRequestOptions(top=PAGE_SIZE, skip_token=skip_token)
+        request = QueryRequest(
+            subscriptions=[_subscription_id()], query=query, options=options
+        )
+        response = client.resources(request)
+        rows.extend(response.data)
+        skip_token = response.skip_token
+        if not skip_token:
+            return rows
+    raise RuntimeError("Resource Graph returned too many pages; stopping.")
 
 def list_resources() -> list[dict]:
     return run_query(
@@ -29,8 +47,9 @@ def find_unattached_disks() -> list[dict]:
         Resources
         | where type =~ 'microsoft.compute/disks'
         | where isempty(managedBy)
-        | project name, resourceGroup, sizeGb = properties.diskSizeGB,
-                  sku = sku.name, tags
+        | project id, name, resourceGroup, managedBy, 
+                diskState = properties.diskState,
+                sizeGb = properties.diskSizeGB, sku = sku.name, tags
         """
     )
 

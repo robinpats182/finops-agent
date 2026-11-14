@@ -1,5 +1,33 @@
 from src.rules.orphan_disk import check_unattached_disks
 from src.rules.unused_ip import check_unused_public_ips
+from src.rules.orphan_disk import check_unattached_disks
+
+
+def disk(**overrides):
+    base = {"name": "d", "resourceGroup": "rg", "sizeGb": 10,
+            "sku": "Standard_LRS", "tags": None}
+    base.update(overrides)
+    return base
+
+
+def test_unattached_disk_is_flagged():
+    assert len(check_unattached_disks([disk()])) == 1
+
+
+def test_attached_disk_is_never_flagged():
+    attached = disk(managedBy="/subscriptions/x/virtualMachines/vm1")
+    assert check_unattached_disks([attached]) == []
+
+
+def test_disk_in_reserved_state_is_skipped():
+    assert check_unattached_disks([disk(diskState="Reserved")]) == []
+
+
+def test_missing_size_does_not_crash():
+    findings = check_unattached_disks([disk(sizeGb=None)])
+    assert len(findings) == 1
+    assert findings[0].est_monthly_cost_usd == 0.0
+    assert "size unknown" in findings[0].issue
 
 
 def make_disk(**overrides):
