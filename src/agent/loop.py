@@ -6,6 +6,13 @@ SYSTEM = (
     "Use only data returned by tools. Never invent resources or numbers."
 )
 
+def _parse_args(raw):
+    """Return a dict of arguments, or None if the model sent garbage."""
+    try:
+        args = json.loads(raw or "{}")
+    except json.JSONDecodeError:
+        return None
+    return args if isinstance(args, dict) else None
 
 def run_agent(llm, toolbox, task: str, schemas: list, max_steps: int = 6) -> str:
     items = [{"role": "user", "content": task}]
@@ -16,7 +23,12 @@ def run_agent(llm, toolbox, task: str, schemas: list, max_steps: int = 6) -> str
         if not calls:
             return response.output_text
         for c in calls:
-            result = toolbox.call(c.name, json.loads(c.arguments or "{}"))
+            args = _parse_args(c.arguments)
+            if args is None:
+                result = {"error": "invalid JSON arguments; send a JSON object"}
+            else:
+                result = toolbox.call(c.name, args)
+                
             items.append({
                 "type": "function_call_output",
                 "call_id": c.call_id,
