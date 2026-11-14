@@ -20,12 +20,14 @@ TOOL_SCHEMAS = [
      "parameters": EMPTY},
 ]
 
+REQUIRED_SCANS = ("scan_unattached_disks", "scan_unused_public_ips")
 
 class ToolBox:
     """Read-only tools. Findings are collected here, so totals come from code."""
 
     def __init__(self):
         self._findings = {}
+        self._completed = set()
 
     @property
     def findings(self):
@@ -38,15 +40,30 @@ class ToolBox:
             self._findings[(f.rule, ident)] = f
         return [asdict(f) for f in found]
 
+    def _run_scan(self, name):
+        if name == "scan_unattached_disks":
+            return check_unattached_disks(find_unattached_disks())
+        return check_unused_public_ips(find_unattached_public_ips())
+
+    def missing_scans(self):
+        """Required scans that have not completed successfully."""
+        return [s for s in REQUIRED_SCANS if s not in self._completed]
+
+    def run_missing_scans(self):
+        """Code, not the model, guarantees coverage. Returns what is still missing."""
+        for name in self.missing_scans():
+            self.call(name, {})
+        return self.missing_scans()
+
     def call(self, name: str, args: dict):
         try:
             if name == "list_resources":
                 return [{k: r[k] for k in ("name", "type", "resourceGroup")}
                         for r in list_resources()]
-            if name == "scan_unattached_disks":
-                return self._store(check_unattached_disks(find_unattached_disks()))
-            if name == "scan_unused_public_ips":
-                return self._store(check_unused_public_ips(find_unattached_public_ips()))
+            if name in REQUIRED_SCANS:
+                result = self._store(self._run_scan(name))
+                self._completed.add(name)   # only after it fully succeeded
+                return result
             return {"error": f"unknown tool: {name}"}
         except Exception as e:  # return errors to the model instead of crashing
             return {"error": f"{type(e).__name__}: {e}"}

@@ -7,7 +7,8 @@ llm = AzureLLM()
 box = ToolBox()
 
 run_agent(llm, box, "Check my Azure subscription for wasted spend.", TOOL_SCHEMAS)
-proposal = build_proposal(box.findings, llm)
+still_missing = box.run_missing_scans()   # code guarantees every scan ran
+proposal = build_proposal(box.findings, llm, incomplete_scans=still_missing)
 
 print(proposal.summary, "\n")
 for f in proposal.findings:

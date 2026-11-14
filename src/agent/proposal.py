@@ -19,9 +19,11 @@ class Proposal:
     findings: list[Finding]
     total_monthly_savings_usd: float
     requires_approval: bool
+    incomplete_scans: tuple = ()
 
 
-def build_proposal(findings: list[Finding], llm: LLM) -> Proposal:
+def build_proposal(findings: list[Finding], llm: LLM,
+                   incomplete_scans=()) -> Proposal:
     # Code decides order and totals; the LLM never touches the numbers.
     ordered = sorted(
         findings,
@@ -34,9 +36,18 @@ def build_proposal(findings: list[Finding], llm: LLM) -> Proposal:
     )
     summary = llm.complete(SYSTEM_PROMPT, facts) if ordered else "No waste found."
 
+    incomplete = tuple(incomplete_scans)
+    if incomplete:
+        # Written by code, so the model can't soften or omit it.
+        warning = ("WARNING: these scans did not complete, so results are "
+                   "partial: " + ", ".join(incomplete))
+        summary = (f"{summary}\n\n{warning}" if ordered
+                   else f"No waste found in completed scans.\n\n{warning}")
+
     return Proposal(
         summary=summary,
         findings=ordered,
         total_monthly_savings_usd=total,
         requires_approval=bool(ordered),  # always true when anything is proposed
+        incomplete_scans=incomplete,
     )
