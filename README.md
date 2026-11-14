@@ -1,4 +1,5 @@
 # FinOps Agent
+![tests](https://github.com/robinpats182/finops-agent/actions/workflows/tests.yml/badge.svg)
 
 **An AI assistant that finds wasted money in your Azure subscription, and never touches anything without a human saying yes.**
 
@@ -235,7 +236,7 @@ finops-agent/
 - [x] Offline test suite
 
 **Next**
-- [ ] CI with GitHub Actions running the tests on every push
+- [x] CI with GitHub Actions running the tests on every push
 - [ ] Real prices from the Azure Retail Prices API
 - [ ] Evaluation set of scenarios (for example "looks idle but is tagged prod", prompt injection in resource names), run in CI
 - [ ] Summary verification: check that numbers in the AI text match the code's totals
