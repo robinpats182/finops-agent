@@ -21,6 +21,7 @@ def check_unused_public_ips(ips: list[dict]) -> list[Finding]:
                 est_monthly_cost_usd=cost,
                 risk=risk_from_tags(ip.get("tags")),
                 recommended_action="Delete the public IP",
+                resource_id=ip.get("id", ""),
             )
         )
     return findings

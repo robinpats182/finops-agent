@@ -33,6 +33,7 @@ def check_unattached_disks(disks: list[dict]) -> list[Finding]:
                 est_monthly_cost_usd=cost,
                 risk=risk_from_tags(d.get("tags")),
                 recommended_action="Snapshot if needed, then delete the disk",
+                resource_id=d.get("id", ""),
             )
         )
     return findings

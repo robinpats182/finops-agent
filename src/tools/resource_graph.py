@@ -60,7 +60,7 @@ def find_unattached_public_ips() -> list[dict]:
         | where type =~ 'microsoft.network/publicipaddresses'
         | where isnull(properties.ipConfiguration)
               and isnull(properties.natGateway)
-        | project name, resourceGroup, sku = sku.name,
+        | project id, name, resourceGroup, sku = sku.name,
                   allocation = properties.publicIPAllocationMethod, tags
         """
     )

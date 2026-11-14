@@ -33,7 +33,9 @@ class ToolBox:
 
     def _store(self, found):
         for f in found:
-            self._findings[(f.rule, f.resource_name)] = f
+            # Resource IDs are globally unique; names are not.
+            ident = (f.resource_id or f"{f.resource_group}/{f.resource_name}").lower()
+            self._findings[(f.rule, ident)] = f
         return [asdict(f) for f in found]
 
     def call(self, name: str, args: dict):

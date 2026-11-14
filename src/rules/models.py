@@ -10,6 +10,7 @@ class Finding:
     est_monthly_cost_usd: float
     risk: str  # "low" | "medium" | "high"
     recommended_action: str
+    resource_id: str = ""
 
 
 ENV_KEYS = {"env", "environment", "stage"}
