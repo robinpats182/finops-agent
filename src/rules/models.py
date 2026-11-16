@@ -11,6 +11,7 @@ class Finding:
     risk: str  # "low" | "medium" | "high"
     recommended_action: str
     resource_id: str = ""
+    cost_basis: str = "estimate"   # "tier_price" = real Azure list price
 
 
 ENV_KEYS = {"env", "environment", "stage"}

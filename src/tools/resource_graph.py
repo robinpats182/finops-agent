@@ -47,7 +47,7 @@ def find_unattached_disks() -> list[dict]:
         Resources
         | where type =~ 'microsoft.compute/disks'
         | where isempty(managedBy)
-        | project id, name, resourceGroup, managedBy, 
+        | project id, name, resourceGroup, location, managedBy, 
                 diskState = properties.diskState,
                 sizeGb = properties.diskSizeGB, sku = sku.name, tags
         """
@@ -60,8 +60,8 @@ def find_unattached_public_ips() -> list[dict]:
         | where type =~ 'microsoft.network/publicipaddresses'
         | where isnull(properties.ipConfiguration)
               and isnull(properties.natGateway)
-        | project id, name, resourceGroup, sku = sku.name,
-                  allocation = properties.publicIPAllocationMethod, tags
+        | project id, name, location, resourceGroup, sku = sku.name, skuTier = sku.tier,
+                  allocation = properties.publicIPAllocationMethod, ipVersion = properties.publicIPAddressVersion, tags
         """
     )
 

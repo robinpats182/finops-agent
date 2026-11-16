@@ -1,10 +1,10 @@
 from dataclasses import asdict
-
 from src.tools.resource_graph import (
     list_resources, find_unattached_disks, find_unattached_public_ips,
 )
 from src.rules.orphan_disk import check_unattached_disks
 from src.rules.unused_ip import check_unused_public_ips
+from src.pricing.cache import load_prices, prices_for_disks
 
 EMPTY = {"type": "object", "properties": {}, "required": []}
 
@@ -25,9 +25,11 @@ REQUIRED_SCANS = ("scan_unattached_disks", "scan_unused_public_ips")
 class ToolBox:
     """Read-only tools. Findings are collected here, so totals come from code."""
 
-    def __init__(self):
+    def __init__(self, price_loader=load_prices):
         self._findings = {}
         self._completed = set()
+        self._price_loader = price_loader
+
 
     @property
     def findings(self):
@@ -42,8 +44,14 @@ class ToolBox:
 
     def _run_scan(self, name):
         if name == "scan_unattached_disks":
-            return check_unattached_disks(find_unattached_disks())
-        return check_unused_public_ips(find_unattached_public_ips())
+            disks = find_unattached_disks()
+            prices = prices_for_disks(disks, self._price_loader)
+            return check_unattached_disks(disks, prices)
+        
+        if name == "scan_unused_public_ips":
+            ips = find_unattached_public_ips()
+            return check_unused_public_ips(ips)
+        raise ValueError(f"Unknown scan: {name}")
 
     def missing_scans(self):
         """Required scans that have not completed successfully."""

@@ -1,0 +1,8 @@
+{"Items": [
+  {"retailPrice": 0.0005, "unitPrice": 0.0005, "armRegionName": "germanywestcentral",
+   "meterName": "S4 LRS Disk Operations", "productName": "Standard HDD Managed Disks",
+   "skuName": "S4 LRS", "unitOfMeasure": "10K", "type": "Consumption"},
+  {"retailPrice": 1.536, "unitPrice": 1.536, "armRegionName": "germanywestcentral",
+   "meterName": "S4 LRS Disk", "productName": "Standard HDD Managed Disks",
+   "skuName": "S4 LRS", "unitOfMeasure": "1/Month", "type": "Consumption"}
+]}

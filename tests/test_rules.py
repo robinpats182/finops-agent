@@ -73,3 +73,25 @@ def test_static_standard_ip_costs_money():
 def test_dynamic_ip_is_free():
     f = check_unused_public_ips([make_ip(allocation="Dynamic")])[0]
     assert f.est_monthly_cost_usd == 0.0
+    
+PRICES = {"germanywestcentral": {"S4 LRS Disk": 1.536}}
+
+
+def test_real_tier_price_is_used_when_available():
+    f = check_unattached_disks(
+        [disk(sizeGb=4, location="germanywestcentral")], PRICES)[0]
+    assert f.est_monthly_cost_usd == 1.54
+    assert f.cost_basis == "tier_price"
+    assert "estimated" not in f.issue
+
+
+def test_missing_price_falls_back_to_flagged_estimate():
+    f = check_unattached_disks(
+        [disk(sizeGb=4, location="germanywestcentral")], {})[0]
+    assert f.cost_basis == "estimate"
+    assert "[price estimated]" in f.issue
+
+
+def test_unknown_region_falls_back_to_flagged_estimate():
+    f = check_unattached_disks([disk(sizeGb=4)], PRICES)[0]
+    assert f.cost_basis == "estimate"
